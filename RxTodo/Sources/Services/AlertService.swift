@@ -7,52 +7,57 @@
 //
 
 import UIKit
-
 import RxSwift
 import URLNavigator
 
 protocol AlertActionType {
-  var title: String? { get }
+    var title: String? { get }
     var style: UIAlertAction.Style { get }
 }
 
 extension AlertActionType {
     var style: UIAlertAction.Style {
-    return .default
-  }
+        return .default
+    }
 }
 
 protocol AlertServiceType: class {
-  func show<Action: AlertActionType>(
-    title: String?,
-    message: String?,
-    preferredStyle: UIAlertController.Style,
-    actions: [Action]
-  ) -> Observable<Action>
+    func show<Action: AlertActionType>(
+        title: String?,
+        message: String?,
+        preferredStyle: UIAlertController.Style,
+        actions: [Action]
+    ) -> Observable<Action>
 }
 
+// 所有的 BaseService 都拥有 总的 service
 final class AlertService: BaseService, AlertServiceType {
+    
+    // 每个方法的返回值都是 Observable
+    func show<Action: AlertActionType>(
+        title: String?,
+        message: String?,
+        preferredStyle: UIAlertController.Style,
+        actions: [Action]
+    ) -> Observable<Action> {
+        return Observable.create { observer in
+            let alert = UIAlertController(title: title, message: message, preferredStyle: preferredStyle)
+            for action in actions {
+                let alertAction = UIAlertAction(title: action.title, style: action.style) { _ in
+                    
+                    observer.onNext(action)
+                    observer.onCompleted()
+                }
+                alert.addAction(alertAction)
+            }
 
-  func show<Action: AlertActionType>(
-    title: String?,
-    message: String?,
-    preferredStyle: UIAlertController.Style,
-    actions: [Action]
-  ) -> Observable<Action> {
-    return Observable.create { observer in
-      let alert = UIAlertController(title: title, message: message, preferredStyle: preferredStyle)
-      for action in actions {
-        let alertAction = UIAlertAction(title: action.title, style: action.style) { _ in
-          observer.onNext(action)
-          observer.onCompleted()
+            // 仅仅用到 Navigator 获取最顶层 view controller 的方法
+            Navigator().present(alert)
+            //
+            return Disposables.create {
+                alert.dismiss(animated: true, completion: nil)
+            }
         }
-        alert.addAction(alertAction)
-      }
-      Navigator().present(alert)
-      return Disposables.create {
-        alert.dismiss(animated: true, completion: nil)
-      }
     }
-  }
-
+    
 }

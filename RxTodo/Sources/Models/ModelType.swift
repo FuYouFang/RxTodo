@@ -9,17 +9,18 @@
 import Then
 
 protocol Identifiable {
-  associatedtype Identifier: Equatable
-  var id: Identifier { get }
+    associatedtype Identifier: Equatable
+    var id: Identifier { get }
 }
 
 protocol ModelType: Then {
 }
 
+// 给特殊的数组，添加扩展，
 extension Collection where Self.Iterator.Element: Identifiable {
-
-  func index(of element: Self.Iterator.Element) -> Self.Index? {
-    return self.index { $0.id == element.id }
-  }
-
+    
+    func index(of element: Self.Iterator.Element) -> Self.Index? {
+        return self.index { $0.id == element.id }
+    }
+    
 }

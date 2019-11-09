@@ -11,11 +11,11 @@ import RxCocoa
 import RxSwift
 
 class TaskCellReactor: Reactor {
-  typealias Action = NoAction
-
-  let initialState: Task
-
-  init(task: Task) {
-    self.initialState = task
-  }
+    typealias Action = NoAction
+    
+    let initialState: Task
+    
+    init(task: Task) {
+        self.initialState = task
+    }
 }
