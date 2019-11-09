@@ -36,13 +36,10 @@ protocol TaskServiceType {
 final class TaskService: BaseService, TaskServiceType {
     
     let event = PublishSubject<TaskEvent>()
-    
-    // 返回只有一个数据的时候，使用 Observable.just()
-    func fetchTasks() -> Observable<[Task]> {
+    private lazy var tasks: [Task] = {
         if let savedTaskDictionaries = self.provider.userDefaultsService.value(forKey: .tasks) {
-            // compactMap 用在可能为 nil 的情况下
             let tasks = savedTaskDictionaries.compactMap(Task.init)
-            return .just(tasks)
+            return tasks
         }
         let defaultTasks: [Task] = [
             Task(title: "Go to https://github.com/devxoul"),
@@ -51,7 +48,12 @@ final class TaskService: BaseService, TaskServiceType {
         ]
         let defaultTaskDictionaries = defaultTasks.map { $0.asDictionary() }
         self.provider.userDefaultsService.set(value: defaultTaskDictionaries, forKey: .tasks)
-        return .just(defaultTasks)
+        return defaultTasks
+    }()
+    
+    // 返回只有一个数据的时候，使用 Observable.just()
+    func fetchTasks() -> Observable<[Task]> {
+        return .just(tasks)
     }
     
     @discardableResult
@@ -136,14 +138,12 @@ final class TaskService: BaseService, TaskServiceType {
     func markAsDone(taskID: String) -> Observable<Task> {
         return self.fetchTasks()
             .flatMap { [weak self] tasks -> Observable<Task> in
-                guard let `self` = self else { return .empty() }
+                guard let self = self else { return .empty() }
                 guard let index = tasks.index(where: { $0.id == taskID }) else { return .empty() }
-                var tasks = tasks
-                let newTask = tasks[index].with {
+                let task = tasks[index].then {
                     $0.isDone = true
                 }
-                tasks[index] = newTask
-                return self.saveTasks(tasks).map { newTask }
+                return self.saveTasks(tasks).map { task }
             }
             .do(onNext: { task in
                 self.event.onNext(.markAsDone(id: task.id))
@@ -155,12 +155,11 @@ final class TaskService: BaseService, TaskServiceType {
             .flatMap { [weak self] tasks -> Observable<Task> in
                 guard let `self` = self else { return .empty() }
                 guard let index = tasks.index(where: { $0.id == taskID }) else { return .empty() }
-                var tasks = tasks
-                let newTask = tasks[index].with {
+                
+                let task = tasks[index].then {
                     $0.isDone = false
                 }
-                tasks[index] = newTask
-                return self.saveTasks(tasks).map { newTask }
+                return self.saveTasks(tasks).map { task }
             }
             .do(onNext: { task in
                 self.event.onNext(.markAsUndone(id: task.id))

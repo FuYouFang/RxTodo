@@ -18,7 +18,7 @@ final class TaskListViewReactor: Reactor {
     enum Action {
         case refresh
         case toggleEditing
-        case toggleTaskDone(IndexPath)
+        case toggleTaskDone(IndexPath) // 切换完成状态
         case deleteTask(IndexPath)
         case moveTask(IndexPath, IndexPath)
     }
@@ -31,12 +31,12 @@ final class TaskListViewReactor: Reactor {
         case deleteSectionItem(IndexPath)
         case moveSectionItem(IndexPath, IndexPath)
     }
-    
+
     struct State {
         var isEditing: Bool
         var sections: [TaskListSection]
     }
-    
+
     let provider: ServiceProviderType
     let initialState: State
     
@@ -79,12 +79,12 @@ final class TaskListViewReactor: Reactor {
                 .flatMap { _ in Observable.empty() }
         }
     }
-    
+
     func transform(mutation: Observable<Mutation>) -> Observable<Mutation> {
         let taskEventMutation = self.provider.taskService.event
             .flatMap { [weak self] taskEvent -> Observable<Mutation> in
                 self?.mutate(taskEvent: taskEvent) ?? .empty()
-        }
+            }
         return Observable.of(mutation, taskEventMutation).merge()
     }
     
@@ -112,47 +112,43 @@ final class TaskListViewReactor: Reactor {
             
         case let .markAsDone(id):
             guard let indexPath = self.indexPath(forTaskID: id, from: state) else { return .empty() }
-            var task = state.sections[indexPath].currentState
-            task.isDone = true
-            let reactor = TaskCellReactor(task: task)
-            return .just(.updateSectionItem(indexPath, reactor))
-            
+            let taskReactor = state.sections[indexPath]
+            taskReactor.action.onNext(.update(isDone: true))
+            return .empty()
         case let .markAsUndone(id):
             guard let indexPath = self.indexPath(forTaskID: id, from: state) else { return .empty() }
-            var task = state.sections[indexPath].currentState
-            task.isDone = false
-            let reactor = TaskCellReactor(task: task)
-            return .just(.updateSectionItem(indexPath, reactor))
+            let taskReactor = state.sections[indexPath]
+            taskReactor.action.onNext(.update(isDone: false))
+            return .empty()
         }
     }
     
     func reduce(state: State, mutation: Mutation) -> State {
-        var state = state
+        var newState = state
         switch mutation {
         case let .setSections(sections):
-            state.sections = sections
-            return state
+            newState.sections = sections
+            return newState
             
         case .toggleEditing:
-            state.isEditing = !state.isEditing
-            return state
+            newState.isEditing = !newState.isEditing
+            return newState
             
         case let .insertSectionItem(indexPath, sectionItem):
-            state.sections.insert(sectionItem, at: indexPath)
-            return state
+            newState.sections.insert(sectionItem, at: indexPath)
+            return newState
             
         case let .updateSectionItem(indexPath, sectionItem):
-            state.sections[indexPath] = sectionItem
-            return state
-            
+            newState.sections[indexPath] = sectionItem
+            return newState
         case let .deleteSectionItem(indexPath):
-            state.sections.remove(at: indexPath)
-            return state
+            newState.sections.remove(at: indexPath)
+            return newState
             
         case let .moveSectionItem(sourceIndexPath, destinationIndexPath):
-            let sectionItem = state.sections.remove(at: sourceIndexPath)
-            state.sections.insert(sectionItem, at: destinationIndexPath)
-            return state
+            let sectionItem = newState.sections.remove(at: sourceIndexPath)
+            newState.sections.insert(sectionItem, at: destinationIndexPath)
+            return newState
         }
     }
     

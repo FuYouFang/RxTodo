@@ -11,11 +11,36 @@ import RxCocoa
 import RxSwift
 
 class TaskCellReactor: Reactor {
-    typealias Action = NoAction
+//    typealias Action = NoAction
+    
+    enum Action {
+        case update(isDone: Bool)
+    }
+       
+   enum Mutation {
+       case update(isDone: Bool)
+   }
     
     let initialState: Task
     
     init(task: Task) {
         self.initialState = task
+    }
+    
+    func mutate(action: TaskCellReactor.Action) -> Observable<TaskCellReactor.Mutation> {
+        switch action {
+        case let .update(isDone: isDone):
+            return .just(.update(isDone: isDone))
+        }
+    }
+    
+    func reduce(state: Task, mutation: TaskCellReactor.Mutation) -> Task {
+//        switch mutation {
+//        case let .update(isDone: isDone):
+//            state.isDone = isDone
+//        }
+//        
+        debugPrint("isDone:\(state.isDone)")
+        return state
     }
 }

@@ -116,22 +116,7 @@ final class TaskListViewController: BaseViewController, View {
             })
             .disposed(by: self.disposeBag)
         
-        // 单元格选中事件响应
-        // tableView.rx.itemSelected
-        // tableView.rx.modelSelected
-        
-        // 单元格取消选中事件响应
-        // tableView.rx.itemDeselected
-        // tableView.rx.modelDeselected
-        // Observable.zip(tableView.rx.itemDeselected, tableView.rx.modelDeselected(String.self))
-        
-        // 单元格删除事件响应
-        // tableView.rx.itemDeleted
-        // tableView.rx.modelDeleted
-        
-        // 获取 item 类型的方法
-        // let itemType = type(of: self.dataSource).Section.Item.self
-        
+
         self.tableView.rx.modelSelected(type(of: self.dataSource).Section.Item.self)
             .filter(reactor.state.map { $0.isEditing })
             

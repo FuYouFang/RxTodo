@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct Task: ModelType, Identifiable {
+class Task: ModelType, Identifiable {
     
     var id: String = UUID().uuidString
     var title: String

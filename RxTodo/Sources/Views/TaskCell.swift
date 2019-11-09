@@ -52,8 +52,13 @@ final class TaskCell: BaseTableViewCell, View {
     // MARK: Binding
     
     func bind(reactor: Reactor) {
-        self.titleLabel.text = reactor.currentState.title
-        self.accessoryType = reactor.currentState.isDone ? .checkmark : .none
+        reactor.state
+            .subscribe(onNext: { [weak self] (task) in
+                guard let self = self else { return }
+                self.titleLabel.text = task.title
+                self.accessoryType = task.isDone ? .checkmark : .none
+            })
+            .disposed(by: disposeBag)
     }
     
     
